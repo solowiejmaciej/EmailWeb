@@ -1,0 +1,15 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "font-awesome@6.4.0",
+      "destination": "wwwroot/font-awesome/"
+    },
+    {
+      "provider": "cdnjs",
+      "library": "semantic-ui@2.5.0",
+      "destination": "wwwroot/lib/semantic-ui/"
+    }
+  ]
+}

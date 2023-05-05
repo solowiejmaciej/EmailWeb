@@ -1,0 +1,155 @@
+﻿@using EmailWeb.Data
+@model List<EmailDto>
+@{
+    ViewData["Title"] = "Emails";
+}
+
+<div class="">
+    <div class="form-control" style="background-color: #2E2E36">
+        <div class="col-auto float-lg-end">
+                <p>
+                    <a asp-action="Create">
+                        <button type="submit" class="btn btn-primary mb-3"><i class="fa-sharp fa-solid fa-plus"></i></button>
+                    </a>
+                </p>
+            </div>
+        <form class="row" asp-controller="Email" asp-action="Index" method="GET">
+            <div class="col-auto">
+                <input type="text" class="form-control" name="QueryPhrase" placeholder="Phrase">
+            </div>
+            <div class="col-auto">
+                <input class="form-control" type="datetime-local" data-val="true" name="CreatedAt" value="">
+            </div>
+            <div class="col-auto">
+                @switch (TempData["selected"])
+                {
+                    case EmailStatus.HasErrors:
+                        <select class="form-select" id="StatusMesssage" name="Status" aria-label="Default select example">
+                            <option value="4">All</option>
+                            <option value="0">New</option>
+                            <option value="1">Send</option>
+                            <option value="3" selected>Failed</option>
+                        </select>
+                        break;
+                    case EmailStatus.All:
+                        <select class="form-select" id="StatusMesssage" name="Status" aria-label="Default select example">
+                            <option value="4" selected>All</option>
+                            <option value="0">New</option>
+                            <option value="1">Send</option>
+                            <option value="3">Failed</option>
+                        </select>
+                        break;
+                    case EmailStatus.New:
+                        <select class="form-select" id="StatusMesssage" name="Status" aria-label="Default select example">
+                            <option value="4">All</option>
+                            <option value="0" selected>New</option>
+                            <option value="1">Send</option>
+                            <option value="3">Failed</option>
+                        </select>
+                        break;
+                    case EmailStatus.EmailSended:
+                        <select class="form-select" id="StatusMesssage" name="Status" aria-label="Default select example">
+                            <option value="4">All</option>
+                            <option value="0">New</option>
+                            <option value="1" selected>Send</option>
+                            <option value="3">Failed</option>
+                        </select>
+                        break;
+                }
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary mb-3"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+        </form>
+    </div>
+    <br/>
+    <div class="container">
+        <div class="table-responsive">
+            <table class="table custom-table">
+        <form class="row" asp-controller="Email" asp-action="Delete" method="GET">
+                <thead>
+                <tr>
+                    <th scope="col">
+                        <label class="control control--checkbox">
+                            <input type="checkbox" class="js-check-all"/>
+                            <div class="control__indicator"></div>
+                        </label>
+                    </th>
+                    <th scope="col">Id</th>
+                    <th scope="col">Subject</th>
+                    <th scope="col">To</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Date</th>
+                </tr>
+                </thead>
+                <tbody>
+                <button type="submit" class="btn btn-primary mb-3"><i class="fa-solid fa-trash"></i></button>
+                @foreach (var email in Model)
+                {
+                    switch (email.EmailStatus)
+                    {
+                        case EmailStatus.HasErrors:
+                            <tr scope="row">
+                                <th scope="row">
+                                    <label class="control control--checkbox">
+                                        <input type="checkbox" name="checked" value="@email.Id"/>
+                                        <div class="control__indicator"></div>
+                                    </label>
+                                </th>
+                                <td>@email.Id</td>
+                                <td>@email.Subject</td>
+                                <td>@email.EmailTo</td>
+                                <td class="status"><span class="error">Failed</span></td>
+                                <td>@email.CreatedAt</td>
+                            </tr>
+                            <tr class="spacer">
+                                <td colspan="100"></td>
+                            </tr>
+                            break;
+                        case EmailStatus.New:
+                            <tr scope="row">
+                                <th scope="row">
+                                    <label class="control control--checkbox">
+                                        <input type="checkbox" name="checked" value="@email.Id"/>
+                                        <div class="control__indicator"></div>
+                                    </label>
+                                </th>
+                                <td>@email.Id</td>
+                                <td>@email.Subject</td>
+                                <td>@email.EmailTo</td>
+                                <td class="status"><span class="new">New</span></td>
+                                <td>@email.CreatedAt</td>
+                            </tr>
+                            <tr class="spacer">
+                                <td colspan="100"></td>
+                            </tr>
+                            break;
+                        case EmailStatus.EmailSended:
+                            <tr scope="row">
+                                <th scope="row">
+                                    <label class="control control--checkbox">
+                                        <input type="checkbox" name="checked" value="@email.Id"/>
+                                        <div class="control__indicator"></div>
+                                    </label>
+                                </th>
+                                <td>@email.Id</td>
+                                <td>@email.Subject</td>
+                                <td>@email.EmailTo</td>
+                                <td class="status"><span class="send">Send</span></td>
+                                <td>@email.CreatedAt</td>
+                            </tr>
+                            <tr class="spacer">
+                                <td colspan="100"></td>
+                            </tr>
+                            break;
+                    }
+                }
+                </tbody>
+            </form>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+

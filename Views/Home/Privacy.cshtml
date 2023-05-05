@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Privacy Policy";
+
+    var identity = (System.Security.Claims.ClaimsIdentity)User.Identity;
+}
+<h1>@ViewData["Title"]</h1>
+
+<p>Use this page to detail your site's privacy policy.</p>
+<table class ="table table-striped">
+
+@foreach (var claim in identity.Claims)
+{
+    <tr>
+        <td>@claim.Type</td>
+        <td>@claim.Value</td>
+    </tr>
+}
+</table>
