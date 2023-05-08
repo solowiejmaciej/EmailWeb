@@ -3,6 +3,7 @@ using AutoMapper;
 using EmailWeb.ApplicationUser;
 using EmailWeb.Data;
 using EmailWeb.Models;
+using EmailWeb.Repos;
 using Flurl.Util;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -12,26 +13,30 @@ namespace EmailWeb.Services
     public interface IEmailService
     {
         List<EmailDto> SearchEmails(EmailQuery query);
-
         Task CreateNewEmailAsync(NewEmail newEmail);
+        Task DeleteEmailAsync(List<int> id);
     }
 
     public class EmailService : IEmailService
     {
-        private readonly ApplicationDbContext _dbContext;
         private readonly IMapper _mapper;
         private readonly IUserContext _userContext;
+        private readonly IEmailsRepo _emailsRepo;
 
-        public EmailService(ApplicationDbContext dbContext, IMapper mapper, IUserContext userContext)
+        public EmailService(
+            IMapper mapper, 
+            IUserContext userContext, 
+            IEmailsRepo emailsRepo
+            )
         {
-            _dbContext = dbContext;
             _mapper = mapper;
             _userContext = userContext;
+            _emailsRepo = emailsRepo;
         }
 
         private List<EmailDto> GetAllEmails()
         {
-            var allEmails = _dbContext.Emails.Where(e => e.CreatedById == _userContext.GetCurrentUser().Id).ToList();
+            var allEmails = _emailsRepo.GetAllEmailsByCurrentUser().ToList();
             var allEmailsDtos = _mapper.Map<List<EmailDto>>(allEmails);
 
             return allEmailsDtos;
@@ -51,7 +56,7 @@ namespace EmailWeb.Services
             {
                 if (!query.QueryPhrase.IsNullOrEmpty())
                 {
-                    var result = _dbContext.Emails.Where(
+                    var result = GetAllEmails().Where(
                         e => e.Subject.Contains(query.QueryPhrase) || e.EmailTo.Contains(query.QueryPhrase)
                              ).ToList();
                     var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
@@ -62,7 +67,7 @@ namespace EmailWeb.Services
             }
             if (!query.QueryPhrase.IsNullOrEmpty())
             {
-                var result = _dbContext.Emails.Where(
+                var result = GetAllEmails().Where(
                 e => (e.Subject.Contains(query.QueryPhrase) || e.EmailTo.Contains(query.QueryPhrase))
                     && e.EmailStatus == query.Status).ToList();
                 var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
@@ -70,7 +75,7 @@ namespace EmailWeb.Services
             }
             else
             {
-                var result = _dbContext.Emails.Where(
+                var result = GetAllEmails().Where(
                     e => e.EmailStatus == query.Status).ToList();
                 var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
                 return EmailsDtos;
@@ -79,13 +84,20 @@ namespace EmailWeb.Services
 
         public async Task CreateNewEmailAsync(NewEmail newEmail)
         {
-            var accessor = new HttpContextAccessor();
             var email = _mapper.Map<Email>(newEmail);
-            var currentUserEmail = accessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email).Value;
-            email.EmailSenderName = currentUserEmail;
-            email.EmailFrom = currentUserEmail;
-            await _dbContext.Emails.AddAsync(email);
-            await _dbContext.SaveChangesAsync();
+            
+            var currentUser = _userContext.GetCurrentUser();
+
+            email.EmailSenderName = currentUser.Email;
+            email.EmailFrom = currentUser.Email;
+            email.CreatedById = currentUser.Id;
+
+            await _emailsRepo.AddEmailAsync(email);
+        }
+
+        public async Task DeleteEmailAsync(List<int> ids)
+        {
+            await _emailsRepo.DeleteSofAsync(ids);
         }
     }
 }

@@ -4,7 +4,7 @@ namespace EmailWeb.ApplicationUser;
 
 public interface IUserContext
 {
-    CurrentUser? GetCurrentUser();
+    CurrentUser GetCurrentUser();
 }
 
 public class UserContext : IUserContext
@@ -16,7 +16,7 @@ public class UserContext : IUserContext
         _httpContextAccessor = httpContextAccessor;
     }
 
-    public CurrentUser? GetCurrentUser()
+    public CurrentUser GetCurrentUser()
     {
         var user = _httpContextAccessor?.HttpContext?.User;
         if (user == null)

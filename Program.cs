@@ -2,6 +2,7 @@ using System.Reflection;
 using EmailWeb;
 using EmailWeb.ApplicationUser;
 using EmailWeb.Data;
+using EmailWeb.Repos;
 using EmailWeb.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -22,11 +23,11 @@ builder.Services.AddControllersWithViews();
 
 var configuration = builder.Configuration;
 
-builder.Services.AddAuthentication().AddGoogle(googleOptions =>
+builder.Services.AddAuthentication();/*.AddGoogle(googleOptions =>
 {
     googleOptions.ClientId = configuration["Authentication:Google:ClientId"];
     googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"];
-});
+});*/
 
 //Mapping
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -34,6 +35,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 //Services
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserContext, UserContext>();
+builder.Services.AddScoped<IEmailsRepo, EmailsRepo>();
 
 //Log
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);

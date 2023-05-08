@@ -9,7 +9,9 @@ namespace EmailWeb.MappingProfiles
         public EmailMappingProfile()
         {
             CreateMap<EmailDto, Email>();
-            CreateMap<Email, EmailDto>();
+            CreateMap<Email, EmailDto>()
+                .ForMember(e => e.CreatedAt, o => o.MapFrom(e => e.CreatedAt))
+                .ForMember(e => e.Id, o => o.MapFrom(e => e.Id));
 
             CreateMap<NewEmail, Email>();
         }

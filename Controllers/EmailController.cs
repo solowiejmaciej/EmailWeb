@@ -38,5 +38,11 @@ namespace EmailWeb.Controllers
             _emailService.CreateNewEmailAsync(newEmail);
             return RedirectToAction(nameof(Index));
         }
+        [HttpPost]
+        public IActionResult Delete(EmailsToDelete emails)
+        {
+            _emailService.DeleteEmailAsync(emails.Checked);
+            return RedirectToAction(nameof(Index));
+        }
     }
 }
