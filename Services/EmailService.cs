@@ -1,11 +1,11 @@
-﻿using System.Security.Claims;
+﻿using System.Data;
 using AutoMapper;
 using EmailWeb.ApplicationUser;
 using EmailWeb.Data;
 using EmailWeb.Models;
-using Flurl.Util;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using EmailWeb.Repos;
+using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
 
 namespace EmailWeb.Services
 {
@@ -14,24 +14,32 @@ namespace EmailWeb.Services
         List<EmailDto> SearchEmails(EmailQuery query);
 
         Task CreateNewEmailAsync(NewEmail newEmail);
+
+        Task DeleteEmailAsync(List<int> id);
+
+        MemoryStream GenerateExcel(IEnumerable<EmailDto> emails);
     }
 
     public class EmailService : IEmailService
     {
-        private readonly ApplicationDbContext _dbContext;
         private readonly IMapper _mapper;
         private readonly IUserContext _userContext;
+        private readonly IEmailsRepo _emailsRepo;
 
-        public EmailService(ApplicationDbContext dbContext, IMapper mapper, IUserContext userContext)
+        public EmailService(
+            IMapper mapper,
+            IUserContext userContext,
+            IEmailsRepo emailsRepo
+            )
         {
-            _dbContext = dbContext;
             _mapper = mapper;
             _userContext = userContext;
+            _emailsRepo = emailsRepo;
         }
 
         private List<EmailDto> GetAllEmails()
         {
-            var allEmails = _dbContext.Emails.Where(e => e.CreatedById == _userContext.GetCurrentUser().Id).ToList();
+            var allEmails = _emailsRepo.GetAllEmailsByCurrentUser().ToList();
             var allEmailsDtos = _mapper.Map<List<EmailDto>>(allEmails);
 
             return allEmailsDtos;
@@ -44,48 +52,73 @@ namespace EmailWeb.Services
             SortBy:
             -Status
             -ASC,DESC
-            SearchBy:
-            -Date
              */
-            if (query.Status == EmailStatus.All)
-            {
-                if (!query.QueryPhrase.IsNullOrEmpty())
-                {
-                    var result = _dbContext.Emails.Where(
-                        e => e.Subject.Contains(query.QueryPhrase) || e.EmailTo.Contains(query.QueryPhrase)
-                             ).ToList();
-                    var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
-                    return EmailsDtos;
-                }
 
-                return GetAllEmails();
-            }
-            if (!query.QueryPhrase.IsNullOrEmpty())
+            var searchPhrase = query.QueryPhrase;
+            var emailStatus = query.Status;
+            var date = query.CreatedAt;
+            var allEmailByCurrentUser = _emailsRepo.GetAllEmailsByCurrentUser();
+            var emailsByDate = _emailsRepo.GetAllEmailsByCreatedAt(allEmailByCurrentUser, date);
+
+            if (emailStatus == EmailStatus.All)
             {
-                var result = _dbContext.Emails.Where(
-                e => (e.Subject.Contains(query.QueryPhrase) || e.EmailTo.Contains(query.QueryPhrase))
-                    && e.EmailStatus == query.Status).ToList();
-                var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
-                return EmailsDtos;
+                var result = _emailsRepo.GetEmailEmailToOrSubject(emailsByDate, searchPhrase);
+                return _mapper.Map<List<EmailDto>>(result);
             }
             else
             {
-                var result = _dbContext.Emails.Where(
-                    e => e.EmailStatus == query.Status).ToList();
-                var EmailsDtos = _mapper.Map<List<EmailDto>>(result);
-                return EmailsDtos;
+                var emailsBySubjectOrEmailTo = _emailsRepo.GetEmailEmailToOrSubject(emailsByDate, searchPhrase);
+                var result = _emailsRepo.GetAllEmailsByStatus(emailsBySubjectOrEmailTo, emailStatus);
+                return _mapper.Map<List<EmailDto>>(result);
             }
         }
 
         public async Task CreateNewEmailAsync(NewEmail newEmail)
         {
-            var accessor = new HttpContextAccessor();
             var email = _mapper.Map<Email>(newEmail);
-            var currentUserEmail = accessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email).Value;
-            email.EmailSenderName = currentUserEmail;
-            email.EmailFrom = currentUserEmail;
-            await _dbContext.Emails.AddAsync(email);
-            await _dbContext.SaveChangesAsync();
+
+            var currentUser = _userContext.GetCurrentUser();
+
+            email.EmailSenderName = currentUser.Email;
+            email.EmailFrom = currentUser.Email;
+            email.CreatedById = currentUser.Id;
+
+            await _emailsRepo.AddEmailAsync(email);
+        }
+
+        public async Task DeleteEmailAsync(List<int> ids)
+        {
+            await _emailsRepo.DeleteSofAsync(ids);
+        }
+
+        public MemoryStream GenerateExcel(IEnumerable<EmailDto> emails)
+        {
+            var fileName = $"emails{DateTime.Today}.xlsx";
+            DataTable dataTable = new DataTable("Emails");
+            dataTable.Columns.AddRange(new DataColumn[]
+            {
+                new DataColumn("Id"),
+                new DataColumn("Subject"),
+                new DataColumn("EmailTo"),
+                new DataColumn("CreatedAt"),
+                new DataColumn("EmailStatus")
+            });
+
+            foreach (var email in emails)
+            {
+                dataTable.Rows.Add(email.Id, email.Subject, email.EmailTo, email.CreatedAt, email.EmailStatus);
+            }
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                wb.Worksheets.Add(dataTable);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+
+                    return stream;
+                }
+            }
         }
     }
 }

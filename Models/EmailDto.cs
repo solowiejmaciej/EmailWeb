@@ -9,7 +9,7 @@ namespace EmailWeb.Models
         public string EmailTo { get; set; }
         public string Body { get; set; }
         public DateTime CreatedAt { get; set; }
-        public int? CreatedById { get; set; }
+        public string? CreatedById { get; set; }
         public EmailStatus EmailStatus { get; set; }
     }
 }
