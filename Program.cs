@@ -23,11 +23,11 @@ builder.Services.AddControllersWithViews();
 
 var configuration = builder.Configuration;
 
-builder.Services.AddAuthentication();/*.AddGoogle(googleOptions =>
+builder.Services.AddAuthentication().AddGoogle(googleOptions =>
 {
     googleOptions.ClientId = configuration["Authentication:Google:ClientId"];
     googleOptions.ClientSecret = configuration["Authentication:Google:ClientSecret"];
-});*/
+});
 
 //Mapping
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

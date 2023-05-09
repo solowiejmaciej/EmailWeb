@@ -2,7 +2,6 @@
 using EmailWeb.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace EmailWeb.Controllers
 {
@@ -19,7 +18,10 @@ namespace EmailWeb.Controllers
         public IActionResult Index(EmailQuery query)
         {
             var emails = _emailService.SearchEmails(query);
-            TempData["selected"] = query.Status;
+            TempData["Status"] = query.Status;
+            TempData["CreatedAt"] = query.CreatedAt.ToString(@"yyyy-MM-dd");
+            TempData["QueryPhrase"] = query.QueryPhrase;
+
             return View(emails);
         }
 
@@ -38,11 +40,22 @@ namespace EmailWeb.Controllers
             _emailService.CreateNewEmailAsync(newEmail);
             return RedirectToAction(nameof(Index));
         }
+
         [HttpPost]
         public IActionResult Delete(EmailsToDelete emails)
         {
             _emailService.DeleteEmailAsync(emails.Checked);
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<FileResult> ExportToExcel(EmailQuery query)
+        {
+            var emails = _emailService.SearchEmails(query);
+            var fileName = $"emails{DateTime.Today}.xlsx";
+            var stream = _emailService.GenerateExcel(emails).ToArray();
+
+            return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }

@@ -15,13 +15,13 @@
             </div>
         <form class="row" asp-controller="Email" asp-action="Index" method="GET">
             <div class="col-auto">
-                <input type="text" class="form-control" name="QueryPhrase" placeholder="Phrase">
+                <input type="text" class="form-control" name="QueryPhrase" placeholder="Phrase" value="@TempData["QueryPhrase"]">
             </div>
             <div class="col-auto">
-                <input class="form-control" type="datetime-local" data-val="true" name="CreatedAt" value="">
+                <input class="form-control" type="date" data-val="true" name="CreatedAt" value="@TempData["CreatedAt"]">
             </div>
             <div class="col-auto">
-                @switch (TempData["selected"])
+                @switch (TempData["Status"])
                 {
                     case EmailStatus.HasErrors:
                         <select class="form-select" id="StatusMesssage" name="Status" aria-label="Default select example">
@@ -59,6 +59,7 @@
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-primary mb-3"><i class="fa-solid fa-magnifying-glass"></i></button>
+                <button asp-action="ExportToExcel" type="submit" class="btn btn-primary mb-3">Download</button>
             </div>
         </form>
     </div>
